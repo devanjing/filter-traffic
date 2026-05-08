@@ -44,89 +44,19 @@
     </div>
 
     <script>
-        (async function() {
-            /**
-             * 1. CONFIGURATION
-             * Set your 5 Direct Link Tiers here
-             */
-            const links = {
-                tier1: "https:/tier1.whd.my.id/", // High CPM (US, GB, CA, AU, DE)
-                tier2: "https:/tier2.whd.my.id/", // Mid CPM (SG, JP, AE, FR)
-                tier3: "https:/tier3.whd.my.id/", // SEA/LATAM (ID, TH, PH, VN, BR)
-                other: "https:/tier4.whd.my.id/",// Low CPM / Others
-                bots:  "https:/tier5.whd.my.id/"  // Junk/Bot filter
-            };
+    window.ROUTER_TIER_CONFIG = {
+        T1: new Set(["US", "GB", "CA", "AU", "DE", "CH", "NO"]),
+        T2: new Set(["SG", "JP", "AE", "FR", "NL", "IE", "ES"]),
+        T2: new Set(["ID", "TH", "PH", "VN", "MY", "BR", "MX"])
+    };
 
-            /**
-             * 2. ADVANCED HARDWARE FILTERING
-             * Detects GPU-less servers and automated environments
-             */
-            function analyzeHardware() {
-                const canvas = document.createElement('canvas');
-                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                
-                if (!gl) return { isBot: true };
-
-                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                if (!debugInfo) return { isBot: false };
-
-                const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
-                
-                // Specific signatures of Headless/VPS browsers
-                const botDrivers = ["swiftshader", "llvmpipe", "virtualbox", "vmware", "mesa offscreen", "microsoft basic render"];
-                const isHardwareBot = botDrivers.some(term => renderer.includes(term));
-                
-                // standard automation flags
-                const isAutomation = navigator.webdriver || !navigator.languages || navigator.languages.length === 0;
-
-                return { isBot: isHardwareBot || isAutomation };
-            }
-
-            /**
-             * 3. NETWORK DETECTION & ROUTING
-             */
-            try {
-                // Fetch Cloudflare Trace & Analyze hardware simultaneously
-                const [hardware, traceRes] = await Promise.all([
-                    analyzeHardware(),
-                    fetch('/cdn-cgi/trace').then(r => r.text())
-                ]);
-
-                // Parse Trace (loc=ID, etc.)
-                const cfData = Object.fromEntries(
-                    traceRes.split('\n').filter(v => v).map(v => v.split('='))
-                );
-
-                const country = cfData.loc;
-
-                // --- FINAL LOGIC ---
-
-                // A: The Bot Trap
-                if (hardware.isBot) {
-                    window.location.replace(links.bots);
-                    return;
-                }
-
-                // B: The Tiers
-                const T1 = ["US", "GB", "CA", "AU", "DE", "CH", "NO"];
-                const T2 = ["SG", "JP", "AE", "FR", "NL", "IE", "ES"];
-                const T3 = ["ID", "TH", "PH", "VN", "MY", "BR", "MX"];
-
-                if (T1.includes(country)) {
-                    window.location.replace(links.tier1);
-                } else if (T2.includes(country)) {
-                    window.location.replace(links.tier2);
-                } else if (T3.includes(country)) {
-                    window.location.replace(links.tier3);
-                } else {
-                    window.location.replace(links.other);
-                }
-
-            } catch (e) {
-                // Critical Fallback
-                window.location.replace(links.other);
-            }
-        })();
+    window.ROUTER_LINKS = {
+        bots: 'https:///bot-trap',
+        tier1: '/premium',
+        tier2: '/standard',
+        tier3: '/basic',
+        other: '/default'
+    };
     </script>
 </body>
 </html>
